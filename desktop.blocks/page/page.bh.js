@@ -1,14 +1,20 @@
 module.exports = function(bh) {
 
-    bh.match('page__head', function(ctx, json) {
+    bh.match('page', function(ctx, json) {
+        ctx.tParam('xUaCompatible', json['x-ua-compatible']);
+    });
+
+    bh.match('page__head', function(ctx) {
+        var xUaCompatible = ctx.tParam('xUaCompatible');
+
         ctx.content([
-            json['x-ua-compatible'] === false?
+            xUaCompatible === false?
                 false :
                 {
                     tag : 'meta',
                     attrs : {
                         'http-equiv' : 'X-UA-Compatible',
-                        content : json['x-ua-compatible'] || 'IE=edge'
+                        content : xUaCompatible || 'IE=edge'
                     }
                 },
             ctx.content()

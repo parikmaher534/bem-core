@@ -1,14 +1,19 @@
 block('page')(
+    def().match(function() {
+        return typeof this.ctx['x-ua-compatible'] !== 'undefined';
+    })(function() {
+        applyNext({ xUaCompatible : this.ctx['x-ua-compatible'] });
+    }),
     elem('head')(
         content()(function() {
             return [
-                this.ctx['x-ua-compatible'] === false ?
+                this.xUaCompatible === false ?
                     false :
                     {
                         tag : 'meta',
                         attrs : {
                             'http-equiv' : 'X-UA-Compatible',
-                            content : this.ctx['x-ua-compatible'] || 'IE=edge'
+                            content : this.xUaCompatible || 'IE=edge'
                         }
                     },
                 applyNext()
