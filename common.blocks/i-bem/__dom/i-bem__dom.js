@@ -730,11 +730,12 @@ var DOM = BEM.decl('i-bem__dom',/** @lends BEMDOM.prototype */{
                 names.map(function(name) {
                     return _self.buildClass(name, modName, modVal);
                 }).join(',.'),
-            res = findDomElem(ctx, selector);
+            res = findDomElem(ctx, selector),
+            isSingleName = names.length === 1;
 
         (ctx === this.domElem) && names.forEach(function(name) {
                 var key = _self.buildClass(name, modName, modVal),
-                    elem = this._elemCache[key] = res.filter('.' + key);
+                    elem = this._elemCache[key] = isSingleName ? res : res.filter('.' + key);
                 elem.__bemElemName = name;
             }, this);
 
