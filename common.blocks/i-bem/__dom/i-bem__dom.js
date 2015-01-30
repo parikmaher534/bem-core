@@ -723,12 +723,20 @@ var DOM = BEM.decl('i-bem__dom',/** @lends BEMDOM.prototype */{
             modName = undef;
         }
 
+        names = names.split(' ');
+
         var _self = this.__self,
             selector = '.' +
-                names.split(' ').map(function(name) {
+                names.map(function(name) {
                     return _self.buildClass(name, modName, modVal);
                 }).join(',.'),
             res = findDomElem(ctx, selector);
+
+        (ctx === this.domElem) && names.forEach(function(name) {
+                var key = _self.buildClass(name, modName, modVal),
+                    elem = this._elemCache[key] = res.filter('.' + key);
+                elem.__bemElemName = name;
+            }, this);
 
         return strictMode? this._filterFindElemResults(res) : res;
     },
@@ -755,15 +763,9 @@ var DOM = BEM.decl('i-bem__dom',/** @lends BEMDOM.prototype */{
      * @returns {jQuery} DOM elements
      */
     _elem : function(name, modName, modVal) {
-        var key = name + buildModPostfix(modName, modVal),
-            res;
+        var key = name + buildModPostfix(modName, modVal);
 
-        if(!(res = this._elemCache[key])) {
-            res = this._elemCache[key] = this.findElem(name, modName, modVal);
-            res.__bemElemName = name;
-        }
-
-        return res;
+        return this._elemCache[key] || this.findElem(name, modName, modVal);
     },
 
     /**
