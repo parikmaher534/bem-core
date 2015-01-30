@@ -740,6 +740,11 @@ var Block = inherit(BEM.Block,/** @lends Block.prototype */{
         var res = findDomElem(ctx, this.buildSelector(elem.elem, elem.modName, elem.modVal));
         res.__bemElemName = elem.elem;
 
+        if(ctx === this.domElem) {
+            var key = elem.elem + buildModPostfix(elem.modName, elem.modVal);
+            this._elemCache[key] = res;
+        }
+
         return strictMode? this._filterFindElemResults(res) : res;
     },
 
@@ -768,7 +773,7 @@ var Block = inherit(BEM.Block,/** @lends Block.prototype */{
 
         var key = elem.elem + buildModPostfix(elem.modName, elem.modVal);
 
-        return this._elemCache[key] || (this._elemCache[key] = this.findElem(elem));
+        return this._elemCache[key] || this.findElem(elem);
     },
 
     /**

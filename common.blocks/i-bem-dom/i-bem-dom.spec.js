@@ -257,6 +257,146 @@ describe('i-bem-dom', function() {
         });
     });
 
+    describe('findElem', function() {
+        function getElemIds(elems) {
+            return Array.prototype.map.call(elems, function(elem) {
+                return elem.id;
+            });
+        }
+
+        var rootNode, rootBlock;
+        beforeEach(function() {
+            var RootBlock = BEMDOM.declBlock('root');
+
+            rootNode = $(BEMHTML.apply(
+                {
+                    block : 'root',
+                    content : [
+                        { elem : 'e1', attrs : { id : '1' } },
+                        {
+                            elem : 'e2', attrs : { id : '2' },
+                            content : [
+                                {
+                                    elem : 'e1', attrs : { id : '2-1' },
+                                    mods : { inner : 'no' }
+                                },
+                                {
+                                    elem : 'e3', attrs : { id : '2-3' },
+                                    mods : { inner : 'no', bool : true }
+                                }
+                            ]
+                        },
+                        {
+                            elem : 'e3', attrs : { id : '3' },
+                            content : {
+                                elem : 'e2', attrs : { id : '3-2' },
+                                mods : { inner : 'yes', bool : true },
+                                content : {
+                                    elem : 'e1', attrs : { id : '3-2-1' },
+                                    mods : { inner : 'yes', bool : true }
+                                }
+                            }
+                        },
+                        { elem : 'e2', attrs : { id : '2.' }, mods : { bool : true } }
+                    ]
+                }));
+            rootBlock = BEMDOM.init(rootNode).bem(RootBlock);
+        });
+
+        afterEach(function() {
+            BEMDOM.destruct(rootNode);
+            delete BEM.blocks['root'];
+        });
+
+        it('should find all elems by name', function() {
+            getElemIds(rootBlock.findElem('e1')).should.be.eql(['1', '2-1', '3-2-1']);
+            getElemIds(rootBlock.findElem('e2')).should.be.eql(['2', '3-2', '2.']);
+            getElemIds(rootBlock.findElem('e3')).should.be.eql(['2-3', '3']);
+        });
+
+        it('should find all elems by name, modName and modVal', function() {
+            getElemIds(rootBlock.findElem({ elem : 'e1', modName : 'inner', modVal : 'no' })).should.be.eql(['2-1']);
+            getElemIds(rootBlock.findElem({ elem : 'e1', modName : 'inner', modVal : 'yes' })).should.be.eql(['3-2-1']);
+            getElemIds(rootBlock.findElem({ elem : 'e2', modName : 'inner', modVal : 'no' })).should.be.eql([]);
+            getElemIds(rootBlock.findElem({ elem : 'e2', modName : 'inner', modVal : 'yes' })).should.be.eql(['3-2']);
+            getElemIds(rootBlock.findElem({ elem : 'e3', modName : 'inner', modVal : 'no' })).should.be.eql(['2-3']);
+            getElemIds(rootBlock.findElem({ elem : 'e3', modName : 'inner', modVal : 'yes' })).should.be.eql([]);
+        });
+
+        it('should find all elems by name and boolean mod', function() {
+            getElemIds(rootBlock.findElem({ elem : 'e1', modName : 'bool', modVal : true })).should.be.eql(['3-2-1']);
+            getElemIds(rootBlock.findElem({ elem : 'e2', modName : 'bool', modVal : true })).should.be.eql(['3-2', '2.']);
+            getElemIds(rootBlock.findElem({ elem : 'e3', modName : 'bool', modVal : true })).should.be.eql(['2-3']);
+        });
+
+        it('should find all elems by name and boolean mod', function() {
+            getElemIds(rootBlock.findElem({ elem : 'e1', modName : 'bool', modVal : false })).should.be.eql(['1', '2-1', '3-2-1']);
+            getElemIds(rootBlock.findElem({ elem : 'e2', modName : 'bool', modVal : false })).should.be.eql(['2', '3-2', '2.']);
+            getElemIds(rootBlock.findElem({ elem : 'e3', modName : 'bool', modVal : false })).should.be.eql(['2-3', '3']);
+        });
+
+        it('should cache found elems', function() {
+            // should cache results after first calls
+            ['e1', 'e2', 'e3'].forEach(function (name) {
+                rootBlock.findElem({ elem : name });
+                rootBlock.findElem({ elem : name, modName : 'inner', modVal : 'no' });
+                rootBlock.findElem({ elem : name, modName : 'inner', modVal : 'yes' });
+                rootBlock.findElem({ elem : name, modName : 'bool', modVal : true });
+            });
+
+            // and shouldn't touch `findElem` inside `elem`
+            sinon.stub(rootBlock, 'findElem');
+
+            getElemIds(rootBlock.elem('e1')).should.be.eql(['1', '2-1', '3-2-1']);
+            getElemIds(rootBlock.elem('e2')).should.be.eql(['2', '3-2', '2.']);
+            getElemIds(rootBlock.elem('e3')).should.be.eql(['2-3', '3']);
+            getElemIds(rootBlock.elem({ elem : 'e1', modName : 'inner', modVal : 'yes' })).should.be.eql(['3-2-1']);
+            getElemIds(rootBlock.elem({ elem : 'e2', modName : 'inner', modVal : 'yes' })).should.be.eql(['3-2']);
+            getElemIds(rootBlock.elem({ elem : 'e3', modName : 'inner', modVal : 'no' })).should.be.eql(['2-3']);
+            getElemIds(rootBlock.elem({ elem : 'e1', modName : 'bool', modVal : true })).should.be.eql(['3-2-1']);
+            getElemIds(rootBlock.elem({ elem : 'e2', modName : 'bool', modVal : true })).should.be.eql(['3-2', '2.']);
+            getElemIds(rootBlock.elem({ elem : 'e3', modName : 'bool', modVal : true })).should.be.eql(['2-3']);
+
+            rootBlock.findElem.called.should.be.false;
+            rootBlock.findElem.restore();
+        });
+
+        it('should not update _elemCache on findElem call with ctx', function() {
+            rootBlock.findElem(rootNode.find('[id=2]'), 'e2');
+
+            sinon.stub(rootBlock, 'findElem');
+
+            rootBlock.elem('e2');
+
+            rootBlock.findElem.should.have.been.calledOnce;
+            rootBlock.findElem.restore();
+        });
+
+        it('should update _elemCache on findElem call', function() {
+            rootBlock.elem('e1');
+            rootNode.html(BEMHTML.apply({
+                block : 'root',
+                elem : 'e1',
+                attrs : { id : '1.' }
+            }));
+            rootBlock.findElem('e1');
+
+            getElemIds(rootBlock.elem('e1')).should.be.eql(['1.']);
+        });
+
+        it('should not update _elemCache on findElem call with ctx', function() {
+            rootBlock.elem('e1');
+            rootNode.html(BEMHTML.apply({
+                block : 'root',
+                elem : 'e1',
+                attrs : { id : '1.' }
+            }));
+            rootBlock.findElem('e1');
+
+            getElemIds(rootBlock.elem('e1')).should.be.eql(['1.']);
+        });
+    });
+
     describe('BEMDOM.init', function() {
         var spy, rootNode;
         beforeEach(function() {
