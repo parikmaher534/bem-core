@@ -38,7 +38,11 @@ var undef,
         if(ctx) {
             var typeOfCtx = typeof ctx;
 
-            if(typeOfCtx === 'string' || typeOfCtx === 'object' || typeOfCtx === 'function') {
+            if(typeOfCtx === 'object' && ctx.__self) { // bem entity instance
+                res.ctx = ctx.domElem;
+                res.key = ctx.__self.getEntityName(); // FIXME: key should be unique for instance, not for Class
+                res.entityCls = ctx.__self;
+            } else if(typeOfCtx === 'string' || typeOfCtx === 'object' || typeOfCtx === 'function') {
                 var entityName, blockName, elemName, modName, modVal;
                 if(typeOfCtx === 'string') { // elem name
                     blockName = defCls._blockName;
