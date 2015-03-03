@@ -10,9 +10,9 @@ describe('DOM events', function() {
     var Block1, Block2, block1, spy1, spy2, spy3, spy4, spy5, spy6, spy7,
         wrapSpy = function(spy) {
             return function(e) {
-                // NOTE: we need to pass bemTarget explicitly, as `e` is being
+                // NOTE: we need to pass bemTarget and data explicitly, as `e` is being
                 // changed while event is propagating
-                spy.call(this, e, e.bemTarget);
+                spy.call(this, e, e.bemTarget, e.data);
             };
         },
         data = { data : 'data' };
@@ -313,10 +313,12 @@ describe('DOM events', function() {
                                     this.domEvents(this.elem('e1'))
                                         .on('click', spy1)
                                         .on('click', spy2)
-                                        .on('click', data, spy3)
-                                        .on({ 'click' : spy4 }, data);
+                                        .on('click', data, wrapSpy(spy3))
+                                        .on({ 'click' : wrapSpy(spy4) }, data);
 
                                     this.domEvents(this.elem('e2')).on('click', spy5);
+
+                                    this.domEvents(this.elems('e1')[1]).on('click', spy6);
                                 }
                             }
                         }
@@ -344,13 +346,20 @@ describe('DOM events', function() {
                         spy2.should.have.been.called;
 
                         spy3.should.have.been.called;
-                        spy3.args[0][0].data.should.have.been.equal(data);
-                        spy3.args[0][0].bemTarget.should.be.equal(elem1);
+                        spy3.args[0][1].should.be.equal(elem1);
+                        spy3.args[0][2].should.be.equal(data);
 
                         spy4.should.have.been.called;
-                        spy4.args[0][0].data.should.have.been.equal(data);
+                        spy4.args[0][2].should.be.equal(data);
 
                         spy5.should.not.have.been.called;
+                    });
+
+                    it('should properly bind handlers on elem with the same name', function() {
+                        block1.elem('e1').domElem.trigger('click');
+
+                        spy1.should.have.been.called;
+                        spy6.should.not.have.been.called;
                     });
 
                     it('should properly unbind all handlers', function() {

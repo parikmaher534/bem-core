@@ -40,7 +40,7 @@ var undef,
 
             if(typeOfCtx === 'object' && ctx.__self) { // bem entity instance
                 res.ctx = ctx.domElem;
-                res.key = ctx.__self.getEntityName(); // FIXME: key should be unique for instance, not for Class
+                res.key = ctx._uniqId;
                 res.entityCls = ctx.__self;
             } else if(typeOfCtx === 'string' || typeOfCtx === 'object' || typeOfCtx === 'function') {
                 var entityName, blockName, elemName, modName, modVal;
