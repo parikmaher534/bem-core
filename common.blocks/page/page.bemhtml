@@ -13,7 +13,7 @@ block('page')(
                         content : [
                             { tag : 'meta', attrs : { charset : 'utf-8' } },
                             { tag : 'title', content : ctx.title },
-                            { block : 'ua' },
+                            { block : 'ua', attrs : { nonce : this.ctx.nonce } },
                             ctx.head,
                             ctx.styles,
                             ctx.favicon? { elem : 'favicon', url : ctx.favicon } : ''
