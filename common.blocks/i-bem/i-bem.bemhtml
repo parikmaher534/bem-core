@@ -11,7 +11,9 @@ var undef,
     },
     SHORT_TAGS = { // хэш для быстрого определения, является ли тэг коротким
         area : 1, base : 1, br : 1, col : 1, command : 1, embed : 1, hr : 1, img : 1,
-        input : 1, keygen : 1, link : 1, meta : 1, param : 1, source : 1, wbr : 1 };
+        input : 1, keygen : 1, link : 1, meta : 1, param : 1, source : 1, wbr : 1 },
+    skipApplyNext = context.skipApplyNext ||
+                    function noop(ctx, cb) { return cb.call(ctx); };
 
 (function(BEM, undefined) {
 
@@ -188,6 +190,7 @@ function BEMContext(context, apply_) {
     this.elem = undef;
     this.mods = undef;
     this.elemMods = undef;
+    this._skipApplyNext = skipApplyNext;
 }
 
 BEMContext.prototype.isArray = isArray;
@@ -453,12 +456,14 @@ def()(function() {
 
             var content = apply('content');
             if(content || content === 0) {
-                isBEM = vBlock || this.elem;
-                apply('', {
-                    _notNewList : false,
-                    position : isBEM? 1 : this.position,
-                    _listLength : isBEM? 1 : this._listLength,
-                    ctx : content
+                this._skipApplyNext(this, function() {
+                    isBEM = vBlock || this.elem;
+                    apply('', {
+                        _notNewList : false,
+                        position : isBEM? 1 : this.position,
+                        _listLength : isBEM? 1 : this._listLength,
+                        ctx : content
+                    });
                 });
             }
 
